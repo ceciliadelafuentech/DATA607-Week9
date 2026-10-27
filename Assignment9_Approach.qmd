@@ -1,0 +1,14 @@
+---
+title: "Assignment9"
+author: "Cecilia De La Fuente Chavez"
+format: html
+execute:
+  echo: true
+editor: visual
+---
+
+## Approach Deliverable
+
+### Overview
+
+For this assignment, I will use the [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) to retrieve daily temperatures and total precipitation for New York City. I will examine data from October 1 to 26, 2026, with the same dates in 2025 to compare if this fall has been warmer than last year. I anticipate some data cleaning challenges, including parsing the JSON, extracting nested daily data, and ensuring dates and measurements are formatted consistently. I will use R to transform the results into a tidy data frame and calculate average daily high temperatures for each period.
