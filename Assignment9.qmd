@@ -1,0 +1,30 @@
+---
+title: "Assignment9"
+author: "Cecilia De La Fuente Chavez"
+format: html
+execute:
+  echo: true
+editor: visual
+---
+
+## Approach Deliverable
+
+### Overview
+
+For this assignmen
+
+## Code Base Deliverable
+
+### Load libraries
+
+### Data and transformations
+
+Load
+
+### Conclusion
+
+For this project,
+
+### AI Assistance
+
+OpenAI. (2026).
