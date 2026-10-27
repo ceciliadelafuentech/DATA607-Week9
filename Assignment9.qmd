@@ -11,20 +11,157 @@ editor: visual
 
 ### Overview
 
-For this assignment
+For this assignment, I will use the [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) to retrieve daily temperatures and total precipitation for New York City. I will examine data from October 1 to 26, 2026, with the same dates in 2025 to compare if this fall has been warmer than last year. I anticipate some data cleaning challenges, including parsing the JSON, extracting nested daily data, and ensuring dates and measurements are formatted consistently. I will use R to transform the results into a tidy data frame and calculate average daily high temperatures for each period.
 
 ## Code Base Deliverable
 
 ### Load libraries
 
+```{r}
+library(httr2) #httr2 makes the API request
+library(jsonlite) #jsonlite parses the JSON response
+library(tidyverse) #tidyverse for data cleaning and transformation
+```
+
 ### Data and transformations
 
-Load
+Build the request
+
+```{r}
+# Define the API endpoint
+url <- "https://archive-api.open-meteo.com/v1/archive" #url identifies the API endpoint
+
+# Build the API request
+request <- request(url) |> #request(url) starts building the request
+  req_url_query( #req_url_query() adds the parameters that tell the API what data to retrieve
+    latitude = 40.7128,
+    longitude = -74.0060,
+    start_date = "2025-10-01",
+    end_date = "2026-10-26",
+    daily = "temperature_2m_max,precipitation_sum", #daily requests the daily maximum temperature and total precipitation
+    temperature_unit = "fahrenheit",
+    timezone = "America/New_York"
+  )
+```
+
+Send the request
+
+```{r}
+# Send the request and retrieve the response
+response <- req_perform(request)
+
+# Check the HTTP status code
+resp_status(response)
+```
+
+Parse the JSON
+
+```{r}
+# Parse the JSON response
+weather_data <- resp_body_json(response)
+
+# Inspect the structure
+str(weather_data, max.level = 2)
+```
+
+Convert into dataframe
+
+```{r}
+# Extract data into a data frame
+weather_df <- tibble( # Opting for tibble() for cleaner data previews and compatibility with tidyverse
+  date = unlist(weather_data$daily$time), #unlist() converts each list into a simpler vector
+  max_temp = unlist(weather_data$daily$temperature_2m_max),
+  precipitation = unlist(weather_data$daily$precipitation_sum)
+)
+
+# Preview the data
+head(weather_df)
+```
+
+Check df
+
+```{r}
+# Check column types
+glimpse(weather_df)
+
+# Count missing values in each column
+weather_df |>
+  summarise(
+    across(everything(), ~ sum(is.na(.)))
+  )
+```
+
+Convert date column
+
+```{r}
+# Convert date column to Date format
+weather_df <- weather_df |>
+  mutate(date = as.Date(date))
+
+# Check updated column types
+glimpse(weather_df)
+```
+
+Filter October data
+
+```{r}
+# Filter to October 1–26 in 2025 and 2026
+october_df <- weather_df |>
+  filter(
+    format(date, "%m-%d") <= "10-26",
+    format(date, "%m") == "10",
+    format(date, "%Y") %in% c("2025", "2026")
+  )
+
+# Check the filtered data
+october_df
+```
+
+Calculate October averages
+
+```{r}
+# Calculate average daily high temperature by year
+october_summary <- october_df |>
+  mutate(year = format(date, "%Y")) |> #mutate() creates a year column from each date
+  group_by(year) |> #group_by(year) separates the observations into 2025 and 2026
+  summarise( #summarise() calculates the average daily max temp for each year
+    avg_max_temp = round(mean(max_temp), 2),
+    .groups = "drop"
+  )
+
+october_summary
+```
+
+Plot line graph
+
+```{r}
+# Plot daily maximum temperatures by year
+october_df |>
+  mutate(year = format(date, "%Y")) |>
+  ggplot(aes(x = as.integer(format(date, "%d")),
+             y = max_temp,
+             color = year)) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Daily High Temperatures in NYC",
+    subtitle = "October 1–26, 2025 vs. 2026",
+    x = "Day of October",
+    y = "Maximum Temperature (°F)",
+    color = "Year"
+  ) +
+  theme_minimal()
+```
 
 ### Conclusion
 
-For this project,
+The Open-Meteo Historical Weather API provided daily maximum temperatures and total precipitation for New York City. I extracted the nested JSON data into a tibble, and checked column types and missing values. I converted the date column to Date format, and because no missing values were found, no additional cleaning steps were taken.
+
+The analysis found that the average daily maximum temperature from October 1–26 was 67.87°F in2026, compared with 66.53°F in 2025, a difference of approximately **1.34°F.** The line graph showed daily temperature fluctuations in both years, but temperatures in 2026 generally remained higher after around October 10, while temperatures in 2025 declined and did not return to their earlier highs.
+
+Future improvements could include automating the date range so the code retrieves data through the current month and day, reducing the need for manual updates. The analysis could also be expanded to include additional years to provide more context on whether these temperature differences are unusual.
 
 ### AI Assistance
 
-OpenAI. (2026).
+OpenAI. (2026). ChatGPT \[Generative AI chat\]. <https://chatgpt.com/>
+
+ChatGPT was used as a supplemental tool to help identify an API, understand the API request and JSON response, troubleshoot the data transformation process, and develop the R code for data cleaning, analysis, and visualization. I also used it to refine the written descriptions. I reviewed and ran the code and interpreted the results as part of my analysis.
